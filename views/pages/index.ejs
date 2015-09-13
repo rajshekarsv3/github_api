@@ -13,12 +13,119 @@
     <div class="form-group">
       <input type="text" placeholder="Github Repo:" class="form-control" id="repo">
     </div>
+    <div class="form-group">
+      <a id='submit' class='btn btn-primary' style='display:none'>Get Count</a>    
+    </div>
   </div>
 </div>
 <div class="container">
-  
+  <div id='alert_box' class="alert box alert-danger" style="display:none">
+    
+  </div>
+  <div id='output_box' class='box' style="display:none">
+    Total Number of Open Issues (Even open Pull requests are provided by API in this call): <span id='total'></span><br/>
+    Total Number of Open Issues (Except Pull Requests): <span id='total_i'></span><br/>
+    Total Number of Open Issues (Only Pull Requests): <span id='total_p'></span><br/>
+
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Period</th>
+          <th>Time</th>
+          <th>No. Of Response from API</th>
+          <th>No. Of Pull Request</th>
+          <th>No. of Issues</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Last 24 hrs</td>
+          <td id='time_24'></td>
+          <td id='total_24'></td>
+          <td id='issues_24'></td>
+          <td id='pulls_24'></td>
+        </tr>
+       <tr>
+          <td>24 hrs-7 Days</td>
+          <td id='time_7'></td>
+          <td id='total_7'></td>
+          <td id='issues_7'></td>
+          <td id='pulls_7'></td>
+        </tr>
+        <tr>
+          <td> > 7 Days</td>
+          <td id='time_o'></td>
+          <td id='total_o'></td>
+          <td id='issues_o'></td>
+          <td id='pulls_o'></td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
 </div>
-
-
+<script type="text/javascript">
+  $(document).ready(function(){
+    $('#repo').keyup(function(){
+      //Display Button only if textbox has some value
+      if($('#repo').val().trim().length==0){
+        $('#submit').hide()
+      }else
+      {
+        $('#submit').show()
+      }
+    });
+    $('#submit').click(function(){
+        $('.box').hide();
+        var url=$('#repo').val().trim();
+        var github_position = [0,4]
+        //Use Javascript's Built in property to get path name
+        var anchor_tag = document.createElement('a');
+        anchor_tag.href = url;
+        //Accepy only if github.com,www.github.com,http://github.com,https://github.com but fails for github.comgithub.com 
+        if(window.location.hostname!=anchor_tag.hostname && ($.inArray(anchor_tag.hostname.search(/github.com/i),github_position)==-1)){
+          alert('Please enter Correct github URL');
+          return;
+        }
+        //Ajax call to get the data
+        $.ajax({ 
+             url: 'server',
+             data: {
+              url: url,
+              hostname: anchor_tag.hostname,
+              pathname: anchor_tag.pathname},
+              type: 'get', 
+              dataType: 'json',        
+              success: function(data) {
+                      //Handling cases when issues were not retrieved
+                      if(data.error==1){
+                        $('#alert_box').html(data.error_reason);
+                        $('#alert_box').show();
+                      }else{
+                        //Populating Values
+                        $('#total').html(data.total_count);
+                        $('#total_i').html(data.total_issues_count);
+                        $('#total_p').html(data.total_pull_count);
+                        $('#total_7').html(data.total_count_7d);
+                        $('#total_24').html(data.total_count_24h);
+                        $('#total_o').html(data.total_count_o);
+                        $('#issues_o').html(data.total_issues_count_o);
+                        $('#issues_24').html(data.total_issues_count_24h);
+                        $('#issues_7').html(data.total_issues_count_7d);
+                        $('#pulls_o').html(data.total_pull_count_o);
+                        $('#pulls_24').html(data.total_pull_count_24h);
+                        $('#pulls_7').html(data.total_pull_count_7d);
+                        $('#time_o').html('> ' + data.before_7days);
+                        $('#time_7').html(data.before_24hrs + ' - ' + data.before_7days);
+                        $('#time_24').html('< ' + data.before_24hrs);
+                        $('#output_box').show();
+                      }
+                    
+                          
+                }
+        });
+    });
+  })
+</script>
 </body>
 </html>
